@@ -2,10 +2,10 @@
 import BookReviews from '@/components/BookReviews.vue';
 import { BookService } from '@/services/BookService.js';
 import { useRoute } from 'vue-router';
+import type { BookInterface } from '@/interfaces/BookInterface.js';
+import { onMounted, ref } from 'vue';
 
-const route = useRoute();
-const bookId = Number(route.params.id);
-const book = BookService.getBookById(bookId);
+const book = ref<BookInterface | null>(null);
 
 // functions
 const USD_TO_COP_RATE = 3100;
@@ -20,6 +20,12 @@ function formatUsdAsCOP(priceUsd: number): string {
   });
   return formatter.format(priceCop);
 }
+
+onMounted(async () => {
+  const route = useRoute();
+  const bookId = Number(route.params.id);
+  book.value = await BookService.getBookById(bookId);
+});
 </script>
 
 <template>

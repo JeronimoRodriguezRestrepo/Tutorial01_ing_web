@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import { ReviewService } from '@/services/ReviewService.js';
+import type { ReviewInterface } from '@/interfaces/ReviewInterface.js';
 
 const props = defineProps<{
   bookId: number;
 }>();
 
-const reviews = computed(() => ReviewService.getReviewsByBookId(props.bookId));
+const reviews = ref<ReviewInterface[]>([]);
 
 const form = ref({
   rating: 5,
@@ -16,12 +17,12 @@ const form = ref({
 
 const isSubmitting = ref(false);
 
-function submitReview() {
+async function submitReview() {
   if (!form.value.comment.trim()) return;
 
   isSubmitting.value = true;
 
-  ReviewService.createReview({
+  await ReviewService.createReview({
     bookId: props.bookId,
     rating: Math.min(5, Math.max(1, form.value.rating)),
     comment: form.value.comment.trim(),
@@ -30,6 +31,7 @@ function submitReview() {
 
   form.value = { rating: 5, comment: '', author: '' };
   isSubmitting.value = false;
+  getReviews();
 }
 
 function formatDate(iso?: string): string {
@@ -40,6 +42,14 @@ function formatDate(iso?: string): string {
     day: 'numeric',
   });
 }
+
+async function getReviews() {
+  reviews.value = await ReviewService.getReviewsByBookId(props.bookId);
+}
+
+onMounted(() => {
+  getReviews();
+});
 </script>
 
 <template>
@@ -50,7 +60,7 @@ function formatDate(iso?: string): string {
       <h4 class="text-sm font-medium text-gray-700 mb-3">Add a review</h4>
       <form @submit.prevent="submitReview" class="space-y-3">
         <div>
-          <label for="rating" class="block text-sm text-gray-600 mb-1">Rating</label>
+          <label class="block text-sm text-gray-600 mb-1" for="rating">Rating</label>
           <select
             id="rating"
             v-model.number="form.rating"
@@ -61,7 +71,7 @@ function formatDate(iso?: string): string {
           </select>
         </div>
         <div>
-          <label for="comment" class="block text-sm text-gray-600 mb-1">Comment</label>
+          <label class="block text-sm text-gray-600 mb-1" for="comment">Comment</label>
           <textarea
             id="comment"
             v-model="form.comment"
@@ -72,7 +82,7 @@ function formatDate(iso?: string): string {
           />
         </div>
         <div>
-          <label for="author" class="block text-sm text-gray-600 mb-1">Your name (optional)</label>
+          <label class="block text-sm text-gray-600 mb-1" for="author">Your name (optional)</label>
           <input
             id="author"
             v-model="form.author"
